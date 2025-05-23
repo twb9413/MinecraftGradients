@@ -13,6 +13,7 @@ import numpy as np
 def TestStuff(image_file):
     im = Image.open("test-block.png")
     imgArr = np.asarray(im, dtype=np.uint32)
+    second_line_process = False
     rSum = 0
     gSum = 0
     bSum = 0
@@ -26,14 +27,18 @@ def TestStuff(image_file):
             gSum += pixelArr[1]
             bSum += pixelArr[2]
         # do the running avg, reset sums
-        rAvg = ((rAvg + rSum) // (width + 1))
-        gAvg = ((gAvg + gSum) // (width + 1))
-        bAvg = ((bAvg + bSum) // (width + 1))
-        print(rAvg, gAvg, bAvg)
-
+        if second_line_process:
+            rAvg = ((rAvg + rSum) // (width + 1))
+            gAvg = ((gAvg + gSum) // (width + 1))
+            bAvg = ((bAvg + bSum) // (width + 1))
+        else:
+            rAvg = rSum
+            bAvg = bSum
+            gAvg = gSum
         rSum = 0
         gSum = 0
         bSum = 0
+        second_line_process = True
     print(rAvg, gAvg, bAvg)
 
 
