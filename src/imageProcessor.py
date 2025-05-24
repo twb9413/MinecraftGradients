@@ -25,17 +25,20 @@ def getAverageColor(im):
     width = im.width
     for lineArr in imgArr:
         for pixelArr in lineArr:
-            rSum += pixelArr[0]
-            gSum += pixelArr[1]
-            bSum += pixelArr[2]
+            try:
+                rSum += pixelArr[0]
+                gSum += pixelArr[1]
+                bSum += pixelArr[2]
+            except:
+                im.show()
         rAvg = ((rAvg + rSum) // (width + 1))
         gAvg = ((gAvg + gSum) // (width + 1))
         bAvg = ((bAvg + bSum) // (width + 1))
         rSum = 0
         gSum = 0
         bSum = 0
-    avgColorArr = np.array([rAvg, gAvg, bAvg])
-    return avgColorArr.astype(np.uint8)
+    avgColorArr = [rAvg, gAvg, bAvg]
+    return avgColorArr
 
 
 def calculateSubImagePoints(width, height, n, m, t):
@@ -84,7 +87,6 @@ def buildAvgColorArr(image_file, n, m):
         subImage = im.transform(size=(sw, sh), method=Image.EXTENT, data=data)
         avgColor = getAverageColor(subImage)
         avgColorArr.append(avgColor)
-        print("region: " + str(data) + " color: " + str(avgColor))
     stitchImage(avgColorArr, n, m)
 
 
@@ -109,4 +111,3 @@ def temp():
 def test():
     for n in range(15):
             print(calculateSubImagePoints(170, 80, 5, 3, n))
-buildAvgColorArr("test-large.png", 190,100)
