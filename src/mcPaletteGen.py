@@ -16,6 +16,20 @@ PALETTE = []
 PALETTE_TREE = None
 os.environ['DISPLAY'] = ''
 
+
+
+def mcPG_init(im_dir):
+    """
+    mcPG_init(im_dir)
+    Called to initialize the:
+    - block:color dict
+    - Palette KDTree
+    """
+    createBlockDict(im_dir)
+    createPaletteTree()
+
+
+
 def createBlockDict(im_dir):
     for im_f in os.listdir(im_dir):
         im_f = os.path.join(im_dir, im_f)
@@ -40,11 +54,14 @@ def colorTreeSearch():
     new_color = np.array([0, 0, 0], dtype=np.uint8)
     distance, index = PALETTE_TREE.query(new_color)
     closest_color = PALETTE[index]
-    for k, v in BLOCK_DICT.items():
-        if v == closest_color:
-            print(k)
-            print(v)
-            return
+    for bl, bl_color in BLOCK_DICT.items():
+        if bl_color == closest_color:
+            return bl
+
+
+
+
+
 
 testDir = os.path.join(os.getcwd(), "blocks")
 createBlockDict(testDir)
