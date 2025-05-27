@@ -9,8 +9,50 @@ This file hanldes all functions image related
 import os
 from PIL import Image
 import numpy as np
+from scipy.spatial import KDTree
 
+BLOCK_DICT = {}
+PALETTE = []
+PALETTE_TREE = None
 os.environ['DISPLAY'] = ''
+
+def mcPG_init(im_dir):
+    """
+    mcPG_init(im_dir)
+    Called to initialize the:
+    - block:color dict
+    - Palette KDTree
+    """
+    createBlockDict(im_dir)
+    createPaletteTree()
+
+def createBlockDict(im_dir):
+    for im_f in os.listdir(im_dir):
+        im_f = os.path.join(im_dir, im_f)
+        with Image.open(im_f).convert('RGB') as im:
+            avgRGB = getAverageColor(im)
+            BLOCK_DICT[im_f] = avgRGB
+
+def createPaletteTree():
+    global PALETTE_TREE
+    global BLOCK_DICT
+    global PALETTE
+    for k, v in BLOCK_DICT.items():
+        PALETTE.append(v)
+    npPalette = np.array(PALETTE, dtype=np.uint8)
+    PALETTE_TREE = KDTree(npPalette)
+
+def colorTreeSearch(target_rgb):
+    global PALETTE_TREE
+    global BLOCK_DICT
+    global PALETTE
+    distance, index = PALETTE_TREE.query(target_rgb)
+    closest_color = PALETTE[index]
+    for bl, bl_color in BLOCK_DICT.items():
+        if bl_color == closest_color:
+            return bl 
+
+
 def getAverageColor(im):
     """
     getAverageColor(image_file)
@@ -24,6 +66,7 @@ def getAverageColor(im):
     gAvg = 0
     bAvg = 0
     width = im.width
+    calcAverage = False
     for lineArr in imgArr:
         for pixelArr in lineArr:
             try:
@@ -32,9 +75,15 @@ def getAverageColor(im):
                 bSum += pixelArr[2]
             except:
                 im.show()
-        rAvg = ((rAvg + rSum) // (width + 1))
-        gAvg = ((gAvg + gSum) // (width + 1))
-        bAvg = ((bAvg + bSum) // (width + 1))
+        if calcAverage:
+            rAvg = ((rAvg + rSum) // (width + 1))
+            gAvg = ((gAvg + gSum) // (width + 1))
+            bAvg = ((bAvg + bSum) // (width + 1))
+        else:
+            rAvg = rSum
+            gAvg = gSum
+            bAvg = bSum
+        calcAverage = True
         rSum = 0
         gSum = 0
         bSum = 0
@@ -61,14 +110,14 @@ def calculateSubImagePoints(width, height, n, m, t):
 
 
 def stitchImage(avgColorArr, n, m):
-    img = Image.new(mode="RGB", size=[n, m])
-    imgArr = np.asarray(img, dtype=np.uint8).copy()
-    index = 0
-    for i in range(imgArr.shape[0]):
-        for j in range(imgArr.shape[1]):
-            imgArr[i, j] = avgColorArr[index]
-            index += 1
-    Image.fromarray(imgArr).show()
+    img = Image.new(mode="RGB", size=[n*16, m*16])
+    for t in range(n*m):
+        im_f = colorTreeSearch(avgColorArr[t])
+        x0 = ((t % n)*16)
+        y0 = ((t // n)*16)
+        with Image.open(im_f) as bl:
+            img.paste(bl, box=[x0,y0])
+    img.show()
 
 
 def buildAvgColorArr(image_file, n, m):
@@ -76,7 +125,7 @@ def buildAvgColorArr(image_file, n, m):
     buildAvgColorArr(image_file, n, m)
     creates the average color <n,m> array
     """
-    im = Image.open(image_file)
+    im = Image.open("test-block.png")
     subImages = n * m
     w = im.width
     h = im.height
@@ -91,24 +140,11 @@ def buildAvgColorArr(image_file, n, m):
     stitchImage(avgColorArr, n, m)
 
 
-def showImages(image_dir):
-    for filename in os.listdir(image_dir):
-        f = os.path.join(image_dir, filename)
-        if os.path.isfile(f):
-            print(f)
-            showImage(f)
-
-
-def showImage(image_file):
-    im = Image.open(image_file)
-    im.show()
-
-def temp():
-    im = Image.open("test-picture.png")
-    subRegion = im.transform(size=(7,7), method=Image.EXTENT, data=(1,1,8,8))
-    im.show()
-    subRegion.show()
-
 def test():
-    for n in range(15):
-            print(calculateSubImagePoints(170, 80, 5, 3, n))
+    blockDir = os.path.join(os.getcwd(), "blocks")
+    mcPG_init(blockDir)
+    im = Image.open("test-sections.png")
+    buildAvgColorArr(im, 20,20)
+
+test()
+

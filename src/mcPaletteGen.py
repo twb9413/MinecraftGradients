@@ -28,8 +28,6 @@ def mcPG_init(im_dir):
     createBlockDict(im_dir)
     createPaletteTree()
 
-
-
 def createBlockDict(im_dir):
     for im_f in os.listdir(im_dir):
         im_f = os.path.join(im_dir, im_f)
@@ -47,23 +45,14 @@ def createPaletteTree():
     npPalette = np.array(PALETTE, dtype=np.uint8)
     PALETTE_TREE = KDTree(npPalette)
 
-def colorTreeSearch():
+def colorTreeSearch(target_rgb):
     global PALETTE_TREE
     global BLOCK_DICT
     global PALETTE
-    new_color = np.array([0, 0, 0], dtype=np.uint8)
-    distance, index = PALETTE_TREE.query(new_color)
+    distance, index = PALETTE_TREE.query()
     closest_color = PALETTE[index]
     for bl, bl_color in BLOCK_DICT.items():
         if bl_color == closest_color:
-            return bl
+            return bl 
 
 
-
-
-
-
-testDir = os.path.join(os.getcwd(), "blocks")
-createBlockDict(testDir)
-createPaletteTree()
-colorTreeSearch()
